@@ -1,5 +1,5 @@
 {
-  "name": "spendwiseai",
+  "name": "spendwise-ai",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -13,5 +13,10 @@
     "react": "^18",
     "react-dom": "^18",
     "recharts": "^2.8.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4"
   }
 }
