@@ -9,17 +9,17 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
-    const unsub = onSnapshot(
-      collection(db, "transactions"),
-      (snapshot) => {
-        setTransactions(
-          snapshot.docs.map((doc) => doc.data())
-        );
-      }
-    );
+    const unsub = onSnapshot(collection(db, "transactions"), (snapshot) => {
+      setTransactions(snapshot.docs.map((doc) => doc.data()));
+    });
 
     return () => unsub();
   }, []);
+
+  // Function to add new transaction locally
+  const handleNewTransaction = (tx) => {
+    setTransactions((prev) => [...prev, tx]);
+  };
 
   const income = transactions
     .filter((t) => t.type === "income")
@@ -31,9 +31,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen p-10">
-      <h1 className="text-3xl font-bold mb-8">
-        Dashboard
-      </h1>
+      <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
 
       <div className="grid grid-cols-3 gap-6">
         <div className="bg-[#111827] p-6 rounded-xl">
@@ -52,7 +50,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <AddTransaction />
+      <AddTransaction onNewTransaction={handleNewTransaction} />
     </div>
   );
 }
