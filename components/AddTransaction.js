@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { db } from "../lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
-export default function AddTransaction() {
+export default function AddTransaction({ onNewTransaction }) {
   const [amount, setAmount] = useState("");
   const [type, setType] = useState("expense");
   const [category, setCategory] = useState("");
@@ -12,23 +12,27 @@ export default function AddTransaction() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    await addDoc(collection(db, "transactions"), {
+    const newTransaction = {
       amount: Number(amount),
       type,
       category,
       date: new Date()
-    });
+    };
 
+    // Add to Firestore
+    await addDoc(collection(db, "transactions"), newTransaction);
+
+    // Immediately update local state in Dashboard
+    if (onNewTransaction) onNewTransaction(newTransaction);
+
+    // Clear form
     setAmount("");
     setCategory("");
   };
 
   return (
     <div className="bg-[#111827] p-6 rounded-xl mt-10">
-      <h2 className="text-lg font-semibold mb-4">
-        Add Transaction
-      </h2>
-
+      <h2 className="text-lg font-semibold mb-4">Add Transaction</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="number"
@@ -38,7 +42,6 @@ export default function AddTransaction() {
           className="w-full p-2 rounded bg-gray-800"
           required
         />
-
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
@@ -47,7 +50,6 @@ export default function AddTransaction() {
           <option value="expense">Expense</option>
           <option value="income">Income</option>
         </select>
-
         <input
           type="text"
           placeholder="Category"
@@ -56,7 +58,6 @@ export default function AddTransaction() {
           className="w-full p-2 rounded bg-gray-800"
           required
         />
-
         <button className="w-full bg-emerald-400 text-black py-2 rounded font-semibold">
           Add Transaction
         </button>
