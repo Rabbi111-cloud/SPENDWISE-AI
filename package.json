@@ -1,0 +1,17 @@
+{
+  "name": "spendwiseai",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "firebase": "^10.12.0",
+    "lucide-react": "^0.344.0",
+    "next": "14.2.3",
+    "react": "^18",
+    "react-dom": "^18",
+    "recharts": "^2.8.0"
+  }
+}
