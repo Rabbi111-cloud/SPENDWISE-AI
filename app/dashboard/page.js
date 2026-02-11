@@ -1,29 +1,56 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db } from "../../lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { useRouter } from "next/navigation";
+import { auth, db } from "../../lib/firebase";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import AddTransaction from "../../components/AddTransaction";
 import ExpenseChart from "../../components/ExpenseChart";
 
 export default function Dashboard() {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
 
-  // Firestore real-time listener
+  // 🔐 Protect Route
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "transactions"), (snapshot) => {
-      setTransactions(snapshot.docs.map((doc) => doc.data()));
+    const unsubscribeAuth = auth.onAuthStateChanged((currentUser) => {
+      if (!currentUser) {
+        router.push("/login");
+      } else {
+        setUser(currentUser);
+
+        // 🔥 Real-time user-specific transactions
+        const q = query(
+          collection(db, "transactions"),
+          where("uid", "==", currentUser.uid)
+        );
+
+        const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+          setTransactions(
+            snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+          );
+        });
+
+        return () => unsubscribeSnapshot();
+      }
     });
 
-    return () => unsub();
-  }, []);
+    return () => unsubscribeAuth();
+  }, [router]);
 
-  // Immediately add new transaction locally
-  const handleNewTransaction = (tx) => {
-    setTransactions((prev) => [...prev, tx]);
-  };
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
-  // Calculate totals
+  // 💰 Calculations
   const income = transactions
     .filter((t) => t.type === "income")
     .reduce((acc, curr) => acc + curr.amount, 0);
@@ -33,11 +60,11 @@ export default function Dashboard() {
     .reduce((acc, curr) => acc + curr.amount, 0);
 
   return (
-    <div className="min-h-screen p-10 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
+    <div className="min-h-screen p-8 max-w-6xl mx-auto">
+      <h1 className="text-3xl font-bold mb-8">Welcome, {user.email}</h1>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-3 gap-6 mb-10">
         <div className="bg-[#111827] p-6 rounded-xl">
           <h3 className="text-gray-400">Income</h3>
           <p className="text-2xl text-emerald-400">₦{income}</p>
@@ -54,11 +81,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Expense Pie Chart */}
+      {/* Chart */}
       <ExpenseChart transactions={transactions} />
 
-      {/* Add Transaction Form */}
-      <AddTransaction onNewTransaction={handleNewTransaction} />
+      {/* Add Transaction */}
+      <AddTransaction user={user} />
     </div>
   );
 }
