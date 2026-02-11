@@ -1,10 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { db } from "../../lib/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
+import AddTransaction from "../../components/AddTransaction";
 
 export default function Dashboard() {
-  const [income, setIncome] = useState(0);
-  const [expense, setExpense] = useState(0);
+  const [transactions, setTransactions] = useState([]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, "transactions"),
+      (snapshot) => {
+        setTransactions(
+          snapshot.docs.map((doc) => doc.data())
+        );
+      }
+    );
+
+    return () => unsub();
+  }, []);
+
+  const income = transactions
+    .filter((t) => t.type === "income")
+    .reduce((acc, curr) => acc + curr.amount, 0);
+
+  const expense = transactions
+    .filter((t) => t.type === "expense")
+    .reduce((acc, curr) => acc + curr.amount, 0);
 
   return (
     <div className="min-h-screen p-10">
@@ -28,6 +51,8 @@ export default function Dashboard() {
           <p className="text-2xl">₦{income - expense}</p>
         </div>
       </div>
+
+      <AddTransaction />
     </div>
   );
 }
