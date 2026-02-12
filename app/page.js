@@ -3,8 +3,10 @@ import Link from "next/link";
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center text-center px-6">
+      
       <h1 className="text-5xl font-bold mb-6">
-        Smart Finance Manager
+        <span className="text-white">SPEND</span>{" "}
+        <span className="text-emerald-400">WISEAI</span>
       </h1>
 
       <p className="text-gray-400 max-w-2xl mb-8">
@@ -28,6 +30,7 @@ export default function Home() {
           Login
         </Link>
       </div>
+
     </main>
   );
 }
