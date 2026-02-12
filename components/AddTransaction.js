@@ -5,73 +5,85 @@ import { db } from "../lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 
 export default function AddTransaction({ user }) {
-  const [amount, setAmount] = useState("");
   const [type, setType] = useState("expense");
   const [category, setCategory] = useState("");
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!category || !amount || !date) return;
 
-    if (!amount || !category) return;
+    await addDoc(collection(db, "transactions"), {
+      uid: user.uid,
+      type,
+      category,
+      amount: Number(amount),
+      date,
+    });
 
-    try {
-      await addDoc(collection(db, "transactions"), {
-        amount: Number(amount),
-        type,
-        category,
-        uid: user.uid, // 🔥 THIS IS THE IMPORTANT PART
-        createdAt: new Date()
-      });
-
-      // Clear form
-      setAmount("");
-      setCategory("");
-      setType("expense");
-    } catch (error) {
-      console.error("Error adding transaction:", error);
-    }
+    setCategory("");
+    setAmount("");
+    setDate(new Date().toISOString().split("T")[0]);
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mt-10 bg-[#111827] p-6 rounded-xl space-y-4"
-    >
-      <h2 className="text-xl font-semibold">Add Transaction</h2>
+    <div className="mt-10 bg-gray-900 p-6 rounded-xl shadow-lg border border-gray-700 max-w-md mx-auto">
+      <h2 className="text-xl font-semibold mb-4">Add Transaction</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block mb-2 text-gray-300">Type</label>
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg text-black"
+          >
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
 
-      <input
-        type="number"
-        placeholder="Amount"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        className="w-full p-2 rounded bg-gray-800"
-        required
-      />
+        <div>
+          <label className="block mb-2 text-gray-300">Category</label>
+          <input
+            type="text"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            placeholder="e.g., Food, Salary"
+            className="w-full px-3 py-2 rounded-lg text-black"
+          />
+        </div>
 
-      <input
-        type="text"
-        placeholder="Category (e.g Food, Salary)"
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-        className="w-full p-2 rounded bg-gray-800"
-        required
-      />
+        <div>
+          <label className="block mb-2 text-gray-300">Amount</label>
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="₦0"
+            className="w-full px-3 py-2 rounded-lg text-black"
+          />
+        </div>
 
-      <select
-        value={type}
-        onChange={(e) => setType(e.target.value)}
-        className="w-full p-2 rounded bg-gray-800"
-      >
-        <option value="expense">Expense</option>
-        <option value="income">Income</option>
-      </select>
+        <div>
+          <label className="block mb-2 text-gray-300">Date</label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg text-black"
+          />
+        </div>
 
-      <button
-        type="submit"
-        className="w-full bg-emerald-400 text-black py-2 rounded font-semibold"
-      >
-        Add Transaction
-      </button>
-    </form>
+        <button
+          type="submit"
+          className="w-full px-6 py-2 bg-emerald-400 text-black rounded-lg font-semibold hover:scale-105 transition"
+        >
+          Add Transaction
+        </button>
+      </form>
+    </div>
   );
 }
