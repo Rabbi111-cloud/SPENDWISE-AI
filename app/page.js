@@ -5,8 +5,8 @@ export default function Home() {
     <main className="min-h-screen flex flex-col items-center justify-center text-center px-6">
       
       <h1 className="text-5xl font-bold mb-6">
-        <span className="text-white">SPEND</span>{" "}
-        <span className="text-emerald-400">WISEAI</span>
+        <span className="text-white">SPENDWISE</span>{" "}
+        <span className="text-emerald-400">AI</span>
       </h1>
 
       <p className="text-gray-400 max-w-2xl mb-8">
