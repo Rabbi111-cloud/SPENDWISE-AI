@@ -42,6 +42,8 @@ export default function ExpenseChart({ transactions }) {
           nameKey="name"
           outerRadius={100}
           label
+          isAnimationActive={true}
+          animationDuration={1000}
         >
           {data.map((entry, index) => (
             <Cell
@@ -62,18 +64,16 @@ export default function ExpenseChart({ transactions }) {
           }}
         />
 
-        {/* Custom Legend */}
+        {/* Legend */}
         <Legend
           verticalAlign="bottom"
           height={36}
           iconType="circle"
-          formatter={(value, entry, index) => (
-            <span className="text-gray-300">{value}</span>
-          )}
+          formatter={(value) => <span className="text-gray-300">{value}</span>}
         />
       </PieChart>
 
-      {/* Optional: Small horizontal color legend */}
+      {/* Optional horizontal colored legend */}
       <div className="flex flex-wrap gap-4 mt-4">
         {data.map((item, index) => (
           <div key={item.name} className="flex items-center gap-2">
