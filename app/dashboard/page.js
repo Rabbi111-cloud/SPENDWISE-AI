@@ -12,8 +12,12 @@ import {
   doc,
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
+
 import AddTransaction from "../../components/AddTransaction";
 import ExpenseChart from "../../components/ExpenseChart";
+import FinancialScore from "../../components/FinancialScore";
+import MonthlyLineChart from "../../components/MonthlyLineChart";
+import DownloadReport from "../../components/DownloadReport";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -22,7 +26,7 @@ export default function Dashboard() {
   const [aiInsight, setAiInsight] = useState("");
   const [loadingAI, setLoadingAI] = useState(false);
 
-  // 🔐 Protect Route + Load User Transactions
+  // 🔐 Protect route + load transactions
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((currentUser) => {
       if (!currentUser) {
@@ -37,10 +41,7 @@ export default function Dashboard() {
 
         const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
           setTransactions(
-            snapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }))
+            snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
           );
         });
 
@@ -59,14 +60,14 @@ export default function Dashboard() {
     );
   }
 
-  // 💰 Calculations
+  // 💰 Calculate income & expense
   const income = transactions
     .filter((t) => t.type === "income")
-    .reduce((acc, curr) => acc + curr.amount, 0);
+    .reduce((acc, t) => acc + t.amount, 0);
 
   const expense = transactions
     .filter((t) => t.type === "expense")
-    .reduce((acc, curr) => acc + curr.amount, 0);
+    .reduce((acc, t) => acc + t.amount, 0);
 
   // 🔓 Logout
   const handleLogout = async () => {
@@ -74,31 +75,23 @@ export default function Dashboard() {
     router.push("/login");
   };
 
-  // 🗑 Delete Transaction
+  // 🗑 Delete transaction
   const handleDelete = async (id) => {
     await deleteDoc(doc(db, "transactions", id));
   };
 
-  // 🤖 Generate AI Insight (Button Click Only)
+  // 🤖 Generate AI insight (button click only)
   const generateInsight = async () => {
     if (transactions.length === 0) return;
-
     setLoadingAI(true);
     setAiInsight("");
 
     try {
       const res = await fetch("/api/ai-insight", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          income,
-          expense,
-          transactions,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ income, expense, transactions }),
       });
-
       const data = await res.json();
       setAiInsight(data.insight);
     } catch (error) {
@@ -109,7 +102,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen p-8 max-w-6xl mx-auto bg-gradient-to-br from-[#0B0F19] via-[#0F172A] to-[#111827] text-white">
+    <div className="min-h-screen p-8 max-w-7xl mx-auto bg-gradient-to-br from-[#0B0F19] via-[#0F172A] to-[#111827] text-white">
       
       {/* Header */}
       <div className="flex justify-between items-center mb-10">
@@ -117,7 +110,6 @@ export default function Dashboard() {
           <span className="text-white">SPENDWISE</span>{" "}
           <span className="text-emerald-400">AI</span>
         </h1>
-
         <button
           onClick={handleLogout}
           className="px-4 py-2 bg-red-500 rounded-lg hover:opacity-80 transition"
@@ -144,12 +136,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* AI Insight Section */}
+      {/* AI Insight */}
       <div className="mb-10 bg-emerald-900/20 border border-emerald-400 p-6 rounded-xl">
         <h3 className="text-lg font-semibold text-emerald-400 mb-4">
           AI Smart Financial Insight
         </h3>
-
         <button
           onClick={generateInsight}
           disabled={loadingAI}
@@ -157,26 +148,26 @@ export default function Dashboard() {
         >
           {loadingAI ? "Analyzing..." : "Generate Insight"}
         </button>
-
         {aiInsight && (
-          <p className="text-gray-300 whitespace-pre-line">
-            {aiInsight}
-          </p>
+          <p className="text-gray-300 whitespace-pre-line">{aiInsight}</p>
         )}
       </div>
 
-      {/* Expense Pie Chart */}
-      <ExpenseChart transactions={transactions} />
+      {/* Dashboard Charts */}
+      <div id="report-section">
+        <ExpenseChart transactions={transactions} />
+        <FinancialScore income={income} expense={expense} />
+        <MonthlyLineChart transactions={transactions} />
+      </div>
+
+      <DownloadReport />
 
       {/* Add Transaction */}
       <AddTransaction user={user} />
 
       {/* Transaction History */}
       <div className="mt-10 bg-gray-900 p-6 rounded-xl">
-        <h2 className="text-xl font-semibold mb-4">
-          Transaction History
-        </h2>
-
+        <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
         {transactions.length === 0 ? (
           <p className="text-gray-400">No transactions yet.</p>
         ) : (
