@@ -15,7 +15,7 @@ export default function Signup() {
     e.preventDefault();
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
+      router.push("/login");
     } catch (err) {
       setError(err.message);
     }
