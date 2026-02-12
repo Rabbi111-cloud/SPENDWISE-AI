@@ -19,8 +19,10 @@ export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [aiInsight, setAiInsight] = useState("");
+  const [loadingAI, setLoadingAI] = useState(false);
 
-  // 🔐 Protect Route
+  // 🔐 Protect Route + Load User Transactions
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((currentUser) => {
       if (!currentUser) {
@@ -51,8 +53,8 @@ export default function Dashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading...</p>
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Loading...
       </div>
     );
   }
@@ -66,33 +68,44 @@ export default function Dashboard() {
     .filter((t) => t.type === "expense")
     .reduce((acc, curr) => acc + curr.amount, 0);
 
-  const total = income + expense;
-  const expensePercent = total > 0 ? (expense / total) * 100 : 0;
-
-  let suggestion = "";
-
-  if (expensePercent > 70) {
-    suggestion =
-      "⚠️ You are spending more than 70% of your income. Consider reducing non-essential expenses.";
-  } else if (expensePercent > 50) {
-    suggestion =
-      "You are spending over half your income. Try saving at least 20%.";
-  } else if (expensePercent > 30) {
-    suggestion =
-      "Good balance! You can increase your savings slightly.";
-  } else {
-    suggestion = "Excellent saving habit! Keep it up 🎉";
-  }
-
   // 🔓 Logout
   const handleLogout = async () => {
     await signOut(auth);
     router.push("/login");
   };
 
-  // 🗑 Delete
+  // 🗑 Delete Transaction
   const handleDelete = async (id) => {
     await deleteDoc(doc(db, "transactions", id));
+  };
+
+  // 🤖 Generate AI Insight (Button Click Only)
+  const generateInsight = async () => {
+    if (transactions.length === 0) return;
+
+    setLoadingAI(true);
+    setAiInsight("");
+
+    try {
+      const res = await fetch("/api/ai-insight", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          income,
+          expense,
+          transactions,
+        }),
+      });
+
+      const data = await res.json();
+      setAiInsight(data.insight);
+    } catch (error) {
+      setAiInsight("Unable to generate insight right now.");
+    }
+
+    setLoadingAI(false);
   };
 
   return (
@@ -131,15 +144,28 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* AI Insight */}
+      {/* AI Insight Section */}
       <div className="mb-10 bg-emerald-900/20 border border-emerald-400 p-6 rounded-xl">
-        <h3 className="text-lg font-semibold text-emerald-400 mb-2">
-          AI Smart Insight
+        <h3 className="text-lg font-semibold text-emerald-400 mb-4">
+          AI Smart Financial Insight
         </h3>
-        <p className="text-gray-300">{suggestion}</p>
+
+        <button
+          onClick={generateInsight}
+          disabled={loadingAI}
+          className="mb-4 px-6 py-2 bg-emerald-400 text-black rounded-lg font-semibold hover:scale-105 transition disabled:opacity-50"
+        >
+          {loadingAI ? "Analyzing..." : "Generate Insight"}
+        </button>
+
+        {aiInsight && (
+          <p className="text-gray-300 whitespace-pre-line">
+            {aiInsight}
+          </p>
+        )}
       </div>
 
-      {/* Chart */}
+      {/* Expense Pie Chart */}
       <ExpenseChart transactions={transactions} />
 
       {/* Add Transaction */}
