@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 
+// Components
 import AddTransaction from "../../components/AddTransaction";
 import ExpenseChart from "../../components/ExpenseChart";
 import FinancialScore from "../../components/FinancialScore";
@@ -26,7 +27,7 @@ export default function Dashboard() {
   const [aiInsight, setAiInsight] = useState("");
   const [loadingAI, setLoadingAI] = useState(false);
 
-  // 🔐 Protect route + load transactions
+  // Protect route + load transactions
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((currentUser) => {
       if (!currentUser) {
@@ -60,7 +61,7 @@ export default function Dashboard() {
     );
   }
 
-  // 💰 Calculate income & expense
+  // Calculate totals
   const income = transactions
     .filter((t) => t.type === "income")
     .reduce((acc, t) => acc + t.amount, 0);
@@ -69,18 +70,18 @@ export default function Dashboard() {
     .filter((t) => t.type === "expense")
     .reduce((acc, t) => acc + t.amount, 0);
 
-  // 🔓 Logout
+  // Logout
   const handleLogout = async () => {
     await signOut(auth);
     router.push("/login");
   };
 
-  // 🗑 Delete transaction
+  // Delete transaction
   const handleDelete = async (id) => {
     await deleteDoc(doc(db, "transactions", id));
   };
 
-  // 🤖 Generate AI insight (button click only)
+  // Generate AI insight
   const generateInsight = async () => {
     if (transactions.length === 0) return;
     setLoadingAI(true);
@@ -103,7 +104,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen p-8 max-w-7xl mx-auto bg-gradient-to-br from-[#0B0F19] via-[#0F172A] to-[#111827] text-white">
-      
+
       {/* Header */}
       <div className="flex justify-between items-center mb-10">
         <h1 className="text-3xl font-bold">
@@ -153,16 +154,17 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Dashboard Charts */}
+      {/* Dashboard Charts & PDF */}
       <div id="report-section">
         <ExpenseChart transactions={transactions} />
         <FinancialScore income={income} expense={expense} />
         <MonthlyLineChart transactions={transactions} />
       </div>
 
+      {/* Browser-only PDF Download */}
       <DownloadReport />
 
-      {/* Add Transaction */}
+      {/* Add Transaction Form */}
       <AddTransaction user={user} />
 
       {/* Transaction History */}
