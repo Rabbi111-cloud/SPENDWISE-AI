@@ -27,7 +27,6 @@ export default function Dashboard() {
   const [aiInsight, setAiInsight] = useState("");
   const [loadingAI, setLoadingAI] = useState(false);
 
-  // Protect route + load transactions
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((currentUser) => {
       if (!currentUser) {
@@ -53,40 +52,19 @@ export default function Dashboard() {
     return () => unsubscribeAuth();
   }, [router]);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-white">
-        Loading...
-      </div>
-    );
-  }
+  if (!user) return <div className="min-h-screen flex items-center justify-center text-white">Loading...</div>;
 
-  // Calculate totals
-  const income = transactions
-    .filter((t) => t.type === "income")
-    .reduce((acc, t) => acc + t.amount, 0);
+  // Totals
+  const income = transactions.filter(t => t.type === "income").reduce((acc, t) => acc + t.amount, 0);
+  const expense = transactions.filter(t => t.type === "expense").reduce((acc, t) => acc + t.amount, 0);
 
-  const expense = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((acc, t) => acc + t.amount, 0);
+  const handleLogout = async () => { await signOut(auth); router.push("/login"); };
+  const handleDelete = async (id) => { await deleteDoc(doc(db, "transactions", id)); };
 
-  // Logout
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push("/login");
-  };
-
-  // Delete transaction
-  const handleDelete = async (id) => {
-    await deleteDoc(doc(db, "transactions", id));
-  };
-
-  // Generate AI insight
   const generateInsight = async () => {
     if (transactions.length === 0) return;
     setLoadingAI(true);
     setAiInsight("");
-
     try {
       const res = await fetch("/api/ai-insight", {
         method: "POST",
@@ -98,15 +76,20 @@ export default function Dashboard() {
     } catch (error) {
       setAiInsight("Unable to generate insight right now.");
     }
-
     setLoadingAI(false);
   };
 
   return (
     <div className="min-h-screen p-8 max-w-7xl mx-auto bg-gradient-to-br from-[#0B0F19] via-[#0F172A] to-[#111827] text-white">
 
-      {/* Header */}
+      {/* Back & Logout Buttons */}
       <div className="flex justify-between items-center mb-10">
+        <button
+          onClick={() => router.back()}
+          className="px-4 py-2 bg-gray-700 rounded-lg hover:opacity-80 transition"
+        >
+          ← Back
+        </button>
         <h1 className="text-3xl font-bold">
           <span className="text-white">SPENDWISE</span>{" "}
           <span className="text-emerald-400">AI</span>
@@ -125,12 +108,10 @@ export default function Dashboard() {
           <h3 className="text-gray-400">Income</h3>
           <p className="text-2xl text-emerald-400">₦{income}</p>
         </div>
-
         <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 hover:scale-[1.02] transition">
           <h3 className="text-gray-400">Expenses</h3>
           <p className="text-2xl text-red-400">₦{expense}</p>
         </div>
-
         <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 hover:scale-[1.02] transition">
           <h3 className="text-gray-400">Savings</h3>
           <p className="text-2xl">₦{income - expense}</p>
@@ -149,52 +130,39 @@ export default function Dashboard() {
         >
           {loadingAI ? "Analyzing..." : "Generate Insight"}
         </button>
-        {aiInsight && (
-          <p className="text-gray-300 whitespace-pre-line">{aiInsight}</p>
-        )}
+        {aiInsight && <p className="text-gray-300 whitespace-pre-line">{aiInsight}</p>}
       </div>
 
-      {/* Dashboard Charts & PDF */}
+      {/* Charts & PDF */}
       <div id="report-section">
         <ExpenseChart transactions={transactions} />
         <FinancialScore income={income} expense={expense} />
         <MonthlyLineChart transactions={transactions} />
       </div>
 
-      {/* Browser-only PDF Download */}
       <DownloadReport />
 
-      {/* Add Transaction Form */}
       <AddTransaction user={user} />
 
-      {/* Transaction History */}
+      {/* Full Transaction History */}
       <div className="mt-10 bg-gray-900 p-6 rounded-xl">
-        <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
+        <h2 className="text-xl font-semibold mb-4">All Transactions</h2>
         {transactions.length === 0 ? (
           <p className="text-gray-400">No transactions yet.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-96 overflow-y-auto">
             {transactions.map((t) => (
-              <div
-                key={t.id}
-                className="flex justify-between items-center bg-gray-800 p-3 rounded-lg"
-              >
+              <div key={t.id} className="flex justify-between items-center bg-gray-800 p-3 rounded-lg">
                 <div>
                   <p className="font-semibold">{t.category}</p>
-                  <p className="text-sm text-gray-400">{t.type}</p>
+                  <p className="text-sm text-gray-400">
+                    {t.type} • {new Date(t.date).toLocaleDateString()}
+                  </p>
                 </div>
-
                 <div className="flex items-center gap-4">
-                  <p
-                    className={
-                      t.type === "income"
-                        ? "text-emerald-400"
-                        : "text-red-400"
-                    }
-                  >
+                  <p className={t.type === "income" ? "text-emerald-400" : "text-red-400"}>
                     ₦{t.amount}
                   </p>
-
                   <button
                     onClick={() => handleDelete(t.id)}
                     className="text-sm text-red-500 hover:underline"
